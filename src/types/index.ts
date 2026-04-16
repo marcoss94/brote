@@ -119,6 +119,7 @@ export interface Profile {
   depot_address: string | null;
   depot_lat: number | null;
   depot_lng: number | null;
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -131,6 +132,7 @@ export interface OptimizationJob {
   original_file_path: string | null;
   result_file_path: string | null;
   config: OptimizationConfig;
+  route_data: RouteStop[] | null;
   error_message: string | null;
   created_at: string;
   completed_at: string | null;

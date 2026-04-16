@@ -14,13 +14,22 @@ export default function RouteMap({ route, depot }: RouteMapProps) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
+    const container = mapRef.current;
+    if (!container) return;
+
+    // Prevent double init from React strict mode
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((container as any)._leaflet_id) return;
 
     // Dynamic import to avoid SSR issues
     import("leaflet").then((L) => {
       import("leaflet/dist/leaflet.css");
 
-      const map = L.map(mapRef.current!, {
+      // Guard: div may have been cleaned up or already initialized during async import
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!mapRef.current || (mapRef.current as any)._leaflet_id) return;
+
+      const map = L.map(mapRef.current, {
         zoomControl: false,
       }).setView([depot.lat, depot.lng], 13);
 

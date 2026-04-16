@@ -84,12 +84,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // Update job as completed
+    // Update job as completed (store route data for later retrieval)
     await supabase
       .from("optimization_jobs")
       .update({
         status: "completed",
         result_file_path: resultFilePath,
+        route_data: route,
         completed_at: new Date().toISOString(),
       })
       .eq("id", job.id);
