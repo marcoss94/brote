@@ -35,6 +35,8 @@ export interface RouteStop {
   franja: string;
   hora_estimada: string; // HH:MM
   distancia_acumulada_km: number;
+  telefono?: string;
+  notas?: string;
 }
 
 export interface OptimizationConfig {
@@ -116,6 +118,7 @@ export interface GeocodingProgress {
 export interface Profile {
   id: string;
   full_name: string | null;
+  avatar_url: string | null;
   depot_address: string | null;
   depot_lat: number | null;
   depot_lng: number | null;

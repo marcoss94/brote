@@ -31,9 +31,25 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("must_change_password")
+        .select("must_change_password, full_name, avatar_url")
         .eq("id", user.id)
         .single();
+
+      // Sync name + avatar from OAuth metadata if empty/changed
+      const meta = user.user_metadata || {};
+      const metaName = meta.full_name || meta.name || null;
+      const metaAvatar = meta.avatar_url || meta.picture || null;
+
+      const updates: Record<string, string | boolean> = {};
+      if (metaName && metaName !== profile?.full_name) updates.full_name = metaName;
+      if (metaAvatar && metaAvatar !== profile?.avatar_url) updates.avatar_url = metaAvatar;
+
+      if (Object.keys(updates).length > 0) {
+        await supabase
+          .from("profiles")
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq("id", user.id);
+      }
 
       if (profile?.must_change_password) {
         setUserId(user.id);

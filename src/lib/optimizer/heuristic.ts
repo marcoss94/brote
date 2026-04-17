@@ -243,6 +243,8 @@ export class HeuristicOptimizer implements RouteOptimizer {
         franja: `${order.franja_desde || "—"}-${order.franja_hasta || "—"}`,
         hora_estimada: formatTime(effectiveArrival),
         distancia_acumulada_km: Math.round(accumulatedKm * 10) / 10,
+        telefono: order.telefono,
+        notas: order.notas,
       });
 
       currentTime = effectiveArrival + config.service_time_minutes;
