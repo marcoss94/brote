@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 import type { Profile } from "@/types";
 
 export default function CuentaPage() {
@@ -19,12 +20,10 @@ export default function CuentaPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   // Name form
   const [fullName, setFullName] = useState("");
   const [savingName, setSavingName] = useState(false);
-  const [nameMessage, setNameMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -46,15 +45,14 @@ export default function CuentaPage() {
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
-    setMessage(null);
 
     if (newPassword.length < 6) {
-      setMessage({ type: "error", text: "La contraseña debe tener al menos 6 caracteres" });
+      toast.error("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setMessage({ type: "error", text: "Las contraseñas no coinciden" });
+      toast.error("Las contraseñas no coinciden");
       return;
     }
 
@@ -63,9 +61,8 @@ export default function CuentaPage() {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
-      setMessage({ type: "error", text: error.message });
+      toast.error(error.message);
     } else {
-      // Clear must_change_password flag
       if (profile?.must_change_password) {
         await supabase
           .from("profiles")
@@ -75,7 +72,7 @@ export default function CuentaPage() {
         setProfile({ ...profile, must_change_password: false });
       }
 
-      setMessage({ type: "success", text: "Contraseña actualizada correctamente" });
+      toast.success("Contraseña actualizada");
       setNewPassword("");
       setConfirmPassword("");
     }
@@ -87,7 +84,6 @@ export default function CuentaPage() {
     e.preventDefault();
     if (!profile || !fullName.trim()) return;
     setSavingName(true);
-    setNameMessage(null);
 
     const { error } = await supabase
       .from("profiles")
@@ -95,10 +91,10 @@ export default function CuentaPage() {
       .eq("id", profile.id);
 
     if (error) {
-      setNameMessage({ type: "error", text: "Error al guardar" });
+      toast.error("Error al guardar");
     } else {
       setProfile({ ...profile, full_name: fullName.trim() });
-      setNameMessage({ type: "success", text: "Nombre actualizado" });
+      toast.success("Nombre actualizado");
     }
 
     setSavingName(false);
@@ -115,7 +111,7 @@ export default function CuentaPage() {
   return (
     <main className="max-w-lg mx-auto px-6 py-8 space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-forest-950">Mi cuenta</h1>
+        <h1 className="text-xl font-semibold text-foreground">Mi cuenta</h1>
         <p className="text-sm text-muted-foreground">Configuración de tu perfil</p>
       </div>
 
@@ -140,11 +136,6 @@ export default function CuentaPage() {
               {savingName ? "Guardando..." : "Guardar"}
             </Button>
           </form>
-          {nameMessage && (
-            <p className={`text-xs mt-2 ${nameMessage.type === "success" ? "text-forest-600" : "text-destructive"}`}>
-              {nameMessage.text}
-            </p>
-          )}
         </CardContent>
       </Card>
 
@@ -180,12 +171,6 @@ export default function CuentaPage() {
                 minLength={6}
               />
             </div>
-
-            {message && (
-              <p className={`text-xs ${message.type === "success" ? "text-forest-600" : "text-destructive"} bg-${message.type === "success" ? "forest-50" : "destructive/10"} border border-${message.type === "success" ? "forest-200" : "destructive/20"} rounded-md px-3 py-2`}>
-                {message.text}
-              </p>
-            )}
 
             <Button type="submit" disabled={saving}>
               {saving ? "Guardando..." : "Cambiar contraseña"}

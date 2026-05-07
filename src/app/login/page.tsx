@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { LeafIcon } from "@/components/icons";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -46,9 +46,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-4 botanical-pattern">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <Link href="/" className="flex items-center justify-center gap-2 mb-2">
-            <LeafIcon className="w-5 h-5 text-forest-700" />
-            <span className="text-base font-semibold text-forest-900">brote</span>
+          <Link href="/" className="flex items-center justify-center mb-3">
+            <Image
+              src="/brote-logo.jpg"
+              alt="Brote"
+              width={120}
+              height={50}
+              priority
+              className="h-9 w-auto"
+            />
           </Link>
           <CardTitle className="text-xl">Bienvenido</CardTitle>
           <CardDescription>Iniciá sesión para continuar</CardDescription>

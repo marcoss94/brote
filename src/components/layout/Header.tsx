@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -12,7 +13,6 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LeafIcon } from "@/components/icons";
 import type { Profile } from "@/types";
 
 function getInitials(name: string | null | undefined, email: string | null | undefined): string {
@@ -58,24 +58,34 @@ export default function Header() {
 
   return (
     <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <LeafIcon className="w-5 h-5 text-forest-700" />
-          <span className="text-base font-semibold text-forest-900 tracking-tight">
-            brote
-          </span>
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <Link href="/dashboard" className="flex items-center">
+          <Image
+            src="/brote-logo.jpg"
+            alt="Brote"
+            width={100}
+            height={42}
+            priority
+            className="h-7 w-auto"
+          />
         </Link>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring transition-opacity hover:opacity-80">
-            <Avatar size="sm">
+          <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors hover:bg-muted pl-1 pr-3 py-1">
+            <Avatar className="size-9">
               {profile?.avatar_url && (
                 <AvatarImage src={profile.avatar_url} alt={displayName} />
               )}
-              <AvatarFallback className="bg-forest-100 text-forest-700 text-[11px] font-medium">
+              <AvatarFallback className="bg-terra-500/20 text-terra-600 text-xs font-semibold tracking-wide">
                 {initials}
               </AvatarFallback>
             </Avatar>
+            <span className="text-sm font-medium text-foreground max-w-[140px] truncate hidden sm:block">
+              {profile?.full_name?.split(" ")[0] || "Usuario"}
+            </span>
+            <svg className="w-3.5 h-3.5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <div className="px-2 py-1.5 flex flex-col">

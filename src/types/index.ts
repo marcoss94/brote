@@ -6,14 +6,21 @@ export interface LatLng {
 }
 
 export interface Order {
-  numero_pedido: string;
+  numero_pedido: string; // auto-generated if missing
   cliente: string;
   direccion: string;
   ciudad?: string;
-  franja_desde: string; // HH:MM
-  franja_hasta: string; // HH:MM
+  franja_desde: string; // HH:MM — optional (empty string if missing)
+  franja_hasta: string; // HH:MM — optional
   telefono?: string;
   notas?: string;
+  // New fields from plant shop format
+  fecha?: string; // DD/MM or free text
+  producto?: string;
+  mensaje?: string;
+  red_social?: string;
+  obs?: string;
+  pickup?: boolean; // true if customer picks up in store
   lat?: number;
   lng?: number;
   // Preserve any extra columns from the original Excel
@@ -37,6 +44,23 @@ export interface RouteStop {
   distancia_acumulada_km: number;
   telefono?: string;
   notas?: string;
+  fecha?: string;
+  producto?: string;
+  mensaje?: string;
+  red_social?: string;
+  obs?: string;
+}
+
+export interface PickupOrder {
+  numero_pedido: string;
+  cliente: string;
+  telefono?: string;
+  fecha?: string;
+  producto?: string;
+  mensaje?: string;
+  red_social?: string;
+  obs?: string;
+  direccion_original: string; // what the Excel said (e.g. "RETIRA PUNTA CARRETAS")
 }
 
 export interface OptimizationConfig {
@@ -51,6 +75,7 @@ export interface OptimizationResult {
   status: "processing" | "completed" | "error";
   result_file_path?: string;
   route: RouteStop[];
+  pickup_orders?: PickupOrder[];
   error_message?: string;
 }
 
@@ -77,6 +102,7 @@ export interface RouteOptimizer {
 
 export interface OptimizeRequest {
   orders: GeocodedOrder[];
+  pickup_orders?: PickupOrder[];
   depot: LatLng;
   original_file_path: string;
 }
@@ -95,6 +121,7 @@ export interface ParsedExcel {
   orders: Order[];
   errors: ValidationError[];
   extraColumns: string[];
+  pickupOrders: PickupOrder[];
 }
 
 // === Geocoding ===
@@ -136,6 +163,7 @@ export interface OptimizationJob {
   result_file_path: string | null;
   config: OptimizationConfig;
   route_data: RouteStop[] | null;
+  pickup_data?: PickupOrder[] | null;
   error_message: string | null;
   created_at: string;
   completed_at: string | null;

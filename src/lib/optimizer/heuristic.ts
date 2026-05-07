@@ -25,58 +25,128 @@ export class HeuristicOptimizer implements RouteOptimizer {
     const provider = new HaversineProvider(config.average_speed_kmh);
     const depot = config.depot;
 
-    // All points: index 0 = depot, 1..n = orders
     const points: LatLng[] = [
       depot,
       ...orders.map((o) => ({ lat: o.lat, lng: o.lng })),
     ];
     const distMatrix = provider.getMatrix(points);
+    const n = orders.length;
 
+    // Multi-start NN: try starting at each city, keep best closed-tour length after 2-opt
+    let bestRoute: number[] | null = null;
+    let bestCost = Infinity;
+
+    const startCount = Math.min(n, 12); // cap for performance
+    const startPicks = this.pickStartCandidates(distMatrix, n, startCount);
+
+    for (const forcedFirst of startPicks) {
+      const nn = this.nearestNeighbor(orders, distMatrix, config, forcedFirst);
+      if (!nn) continue;
+      const optimized = this.twoOpt(nn, orders, distMatrix, config);
+      if (!this.isRouteFeasible(optimized, orders, distMatrix, config)) continue;
+      const cost = this.closedTourCost(optimized, distMatrix);
+      if (cost < bestCost) {
+        bestCost = cost;
+        bestRoute = optimized;
+      }
+    }
+
+    // Fallback: plain NN from depot if multi-start somehow failed
+    if (!bestRoute) {
+      const fallback = this.nearestNeighbor(orders, distMatrix, config, null);
+      bestRoute = fallback || orders.map((_, i) => i);
+    }
+
+    return this.buildRouteStops(bestRoute, orders, distMatrix, config);
+  }
+
+  /**
+   * Closed-tour cost = depot → route[0] → ... → route[last] → depot.
+   * This is the metric 2-opt should minimize when driver returns to depot.
+   */
+  private closedTourCost(route: number[], distMatrix: number[][]): number {
+    let total = 0;
+    let prev = 0; // depot
+    for (const r of route) {
+      const cur = r + 1;
+      total += distMatrix[prev][cur];
+      prev = cur;
+    }
+    total += distMatrix[prev][0]; // return to depot
+    return total;
+  }
+
+  /**
+   * Pick candidate "first" cities for multi-start: the closest few to depot,
+   * plus a few far ones to diversify search.
+   */
+  private pickStartCandidates(
+    distMatrix: number[][],
+    n: number,
+    k: number
+  ): (number | null)[] {
+    const distFromDepot = Array.from({ length: n }, (_, i) => ({
+      idx: i,
+      d: distMatrix[0][i + 1],
+    }));
+    distFromDepot.sort((a, b) => a.d - b.d);
+    const closest = distFromDepot.slice(0, Math.ceil(k / 2)).map((x) => x.idx);
+    const farthest = distFromDepot.slice(-Math.floor(k / 2)).map((x) => x.idx);
+    return [null, ...closest, ...farthest]; // null = unforced (greedy from depot)
+  }
+
+  /**
+   * Nearest-neighbor route construction with optional forced first city.
+   * Returns null if any time window is infeasible from the chosen start.
+   */
+  private nearestNeighbor(
+    orders: GeocodedOrder[],
+    distMatrix: number[][],
+    config: OptimizationConfig,
+    forcedFirst: number | null
+  ): number[] | null {
     const n = orders.length;
     const visited = new Set<number>();
-    const route: number[] = []; // order indices (0-based into orders array)
+    const route: number[] = [];
 
-    // Nearest-neighbor construction with time window priority
-    let currentPoint = 0; // depot index in distMatrix
+    let currentPoint = 0;
     let currentTime = parseTime(config.start_time);
 
-    for (let step = 0; step < n; step++) {
+    if (forcedFirst !== null) {
+      const orderIdx = forcedFirst + 1;
+      const order = orders[forcedFirst];
+      const windowEnd = order.franja_hasta ? parseTime(order.franja_hasta) : 24 * 60;
+      const travelMin = (distMatrix[currentPoint][orderIdx] / config.average_speed_kmh) * 60;
+      const arrival = currentTime + travelMin;
+      if (arrival > windowEnd) return null;
+
+      const windowStart = order.franja_desde ? parseTime(order.franja_desde) : 0;
+      route.push(forcedFirst);
+      visited.add(forcedFirst);
+      currentTime = Math.max(arrival, windowStart) + config.service_time_minutes;
+      currentPoint = orderIdx;
+    }
+
+    for (let step = route.length; step < n; step++) {
       let bestIdx = -1;
       let bestScore = Infinity;
 
       for (let i = 0; i < n; i++) {
         if (visited.has(i)) continue;
-
-        const orderIdx = i + 1; // distMatrix index
-        const travelMinutes =
-          (distMatrix[currentPoint][orderIdx] / config.average_speed_kmh) * 60;
-        const arrivalTime = currentTime + travelMinutes;
+        const orderIdx = i + 1;
+        const travelMin = (distMatrix[currentPoint][orderIdx] / config.average_speed_kmh) * 60;
+        const arrivalTime = currentTime + travelMin;
 
         const order = orders[i];
-        const windowStart = order.franja_desde
-          ? parseTime(order.franja_desde)
-          : 0;
-        const windowEnd = order.franja_hasta
-          ? parseTime(order.franja_hasta)
-          : 24 * 60;
-
-        // Effective arrival: wait if we're early
+        const windowStart = order.franja_desde ? parseTime(order.franja_desde) : 0;
+        const windowEnd = order.franja_hasta ? parseTime(order.franja_hasta) : 24 * 60;
         const effectiveArrival = Math.max(arrivalTime, windowStart);
-
-        // Skip if we'd arrive after the window closes (hard constraint)
         if (effectiveArrival > windowEnd) continue;
 
-        // Score components:
-        // 1. Wait time penalty — heavily penalize choosing orders that require long waits
         const waitMinutes = Math.max(0, windowStart - arrivalTime);
-        // 2. Urgency — less slack before window closes = more urgent (should go first)
-        const urgency = windowEnd - effectiveArrival;
-        // 3. Distance
+        const hasRealWindow = !!order.franja_hasta;
+        const urgency = hasRealWindow ? windowEnd - effectiveArrival : 0;
         const distance = distMatrix[currentPoint][orderIdx];
-
-        // Wait time dominates: 1 minute of waiting = 0.5 km penalty equivalent
-        // Urgency is secondary: tighter windows get slight priority
-        // Distance is tertiary
         const score = waitMinutes * 0.5 + distance + Math.max(0, urgency) * 0.005;
 
         if (score < bestScore) {
@@ -85,7 +155,7 @@ export class HeuristicOptimizer implements RouteOptimizer {
         }
       }
 
-      // If no feasible order found (all windows passed), pick nearest unvisited
+      // Fallback when no candidate fits any window
       if (bestIdx === -1) {
         let minDist = Infinity;
         for (let i = 0; i < n; i++) {
@@ -97,29 +167,20 @@ export class HeuristicOptimizer implements RouteOptimizer {
           }
         }
       }
-
-      if (bestIdx === -1) break; // shouldn't happen
+      if (bestIdx === -1) break;
 
       visited.add(bestIdx);
       route.push(bestIdx);
 
       const orderIdx = bestIdx + 1;
-      const travelMinutes =
-        (distMatrix[currentPoint][orderIdx] / config.average_speed_kmh) * 60;
-      const arrivalTime = currentTime + travelMinutes;
-      const windowStart = orders[bestIdx].franja_desde
-        ? parseTime(orders[bestIdx].franja_desde)
-        : 0;
-      currentTime =
-        Math.max(arrivalTime, windowStart) + config.service_time_minutes;
+      const travelMin = (distMatrix[currentPoint][orderIdx] / config.average_speed_kmh) * 60;
+      const arrivalTime = currentTime + travelMin;
+      const windowStart = orders[bestIdx].franja_desde ? parseTime(orders[bestIdx].franja_desde) : 0;
+      currentTime = Math.max(arrivalTime, windowStart) + config.service_time_minutes;
       currentPoint = orderIdx;
     }
 
-    // 2-opt improvement pass
-    const improved = this.twoOpt(route, orders, distMatrix, config);
-
-    // Build result
-    return this.buildRouteStops(improved, orders, distMatrix, config);
+    return route;
   }
 
   private twoOpt(
@@ -137,31 +198,28 @@ export class HeuristicOptimizer implements RouteOptimizer {
       improved = false;
       iterations++;
 
-      for (let i = 0; i < result.length - 1; i++) {
-        for (let j = i + 2; j < result.length; j++) {
-          // Check if reversing segment [i+1..j] improves distance
-          const prevI = i === 0 ? 0 : result[i - 1] + 1;
-          const currI = result[i] + 1;
-          const currJ = result[j] + 1;
-          const nextJ = j + 1 < result.length ? result[j + 1] + 1 : 0;
+      // Try all segment reversals between two non-adjacent edges.
+      // i = -1 means "edge from depot to route[0]" — allows reversing the head.
+      for (let i = -1; i < result.length - 1; i++) {
+        const startJ = i === -1 ? 1 : i + 2;
+        for (let j = startJ; j < result.length; j++) {
+          // distMatrix indices: depot = 0, order k = k + 1
+          const a = i === -1 ? 0 : result[i] + 1;          // node before reversal
+          const b = result[i + 1] + 1;                     // first of reversal
+          const c = result[j] + 1;                         // last of reversal
+          const d = j + 1 < result.length ? result[j + 1] + 1 : 0; // node after reversal (or depot)
 
-          const currentDist =
-            distMatrix[currI][result[i + 1] + 1] +
-            distMatrix[result[j - 1] + 1 || currI][currJ];
-          const newDist =
-            distMatrix[currI][result[j] + 1] +
-            distMatrix[result[i + 1] + 1][nextJ];
+          const currentDist = distMatrix[a][b] + distMatrix[c][d];
+          const newDist = distMatrix[a][c] + distMatrix[b][d];
 
-          if (newDist < currentDist) {
-            // Reverse segment
+          // Use small epsilon to avoid float-noise oscillation
+          if (newDist < currentDist - 1e-9) {
             const segment = result.slice(i + 1, j + 1).reverse();
             result.splice(i + 1, j - i, ...segment);
 
-            // Verify time windows are still feasible
             if (this.isRouteFeasible(result, orders, distMatrix, config)) {
               improved = true;
             } else {
-              // Revert
               const revert = result.slice(i + 1, j + 1).reverse();
               result.splice(i + 1, j - i, ...revert);
             }
@@ -245,6 +303,11 @@ export class HeuristicOptimizer implements RouteOptimizer {
         distancia_acumulada_km: Math.round(accumulatedKm * 10) / 10,
         telefono: order.telefono,
         notas: order.notas,
+        fecha: order.fecha,
+        producto: order.producto,
+        mensaje: order.mensaje,
+        red_social: order.red_social,
+        obs: order.obs,
       });
 
       currentTime = effectiveArrival + config.service_time_minutes;

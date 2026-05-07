@@ -5,59 +5,59 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Forest palette */
-  --forest-950: #0d1f15;
-  --forest-900: #1a3a2a;
-  --forest-800: #2d5a42;
-  --forest-700: #3d7558;
-  --forest-600: #4d8f6e;
-  --forest-500: #5ea882;
-  --forest-400: #7cbf9a;
-  --forest-300: #a3d4b7;
-  --forest-200: #c8e6d4;
-  --forest-100: #e4f3ea;
-  --forest-50: #f0f9f3;
+  /* Forest palette — aligned with Brote brand green */
+  --forest-950: #0f2a17;
+  --forest-900: #1a4024;
+  --forest-800: #265a33;
+  --forest-700: #348043;
+  --forest-600: #3fa054;
+  --forest-500: #4cbb6c;
+  --forest-400: #70cb8a;
+  --forest-300: #9adcaf;
+  --forest-200: #c2ebd1;
+  --forest-100: #e1f5e7;
+  --forest-50: #f2faf4;
 
-  /* Cream palette */
-  --cream-50: #fefdfb;
-  --cream-100: #fdf9f2;
-  --cream-200: #f5f0e8;
-  --cream-300: #ebe3d5;
-  --cream-400: #d8cdb9;
+  /* Neutrals — off-white Brote-style */
+  --cream-50: #ffffff;
+  --cream-100: #fafafa;
+  --cream-200: #f6f6f6;
+  --cream-300: #e8e8e8;
+  --cream-400: #d3d3d3;
 
-  /* Terracotta accent */
-  --terra-600: #a85a38;
-  --terra-500: #c4704b;
-  --terra-400: #d9896a;
-  --terra-300: #e6a88e;
+  /* Peach accent — Brote icon color */
+  --terra-600: #c67a55;
+  --terra-500: #f19d76;
+  --terra-400: #f4b193;
+  --terra-300: #f8cab5;
 
-  /* Sage */
-  --sage-500: #7c9a82;
-  --sage-400: #96b09b;
-  --sage-300: #b3c7b7;
+  /* Sage — refined neutral greens for muted text */
+  --sage-500: #7a7a7a;
+  --sage-400: #9a9a9a;
+  --sage-300: #b8b8b8;
 
-  /* shadcn mapped to botanical palette */
-  --background: var(--cream-50);
-  --foreground: var(--forest-950);
+  /* shadcn mapped to Brote palette */
+  --background: var(--cream-100);
+  --foreground: #232323;
   --card: #ffffff;
-  --card-foreground: var(--forest-950);
+  --card-foreground: #232323;
   --popover: #ffffff;
-  --popover-foreground: var(--forest-950);
-  --primary: var(--forest-700);
+  --popover-foreground: #232323;
+  --primary: #232323;
   --primary-foreground: #ffffff;
-  --secondary: var(--forest-50);
-  --secondary-foreground: var(--forest-800);
+  --secondary: var(--cream-200);
+  --secondary-foreground: #232323;
   --muted: var(--cream-200);
   --muted-foreground: var(--sage-500);
-  --accent: var(--forest-50);
-  --accent-foreground: var(--forest-800);
-  --destructive: var(--terra-500);
+  --accent: var(--cream-200);
+  --accent-foreground: #232323;
+  --destructive: #ef4444;
   --border: var(--cream-300);
   --input: var(--cream-300);
-  --ring: var(--forest-400);
+  --ring: var(--terra-400);
 
-  --chart-1: var(--forest-500);
-  --chart-2: var(--terra-500);
+  --chart-1: var(--terra-500);
+  --chart-2: var(--forest-500);
   --chart-3: var(--sage-400);
   --chart-4: var(--forest-300);
   --chart-5: var(--terra-300);
@@ -151,7 +151,7 @@
 
 /* Leaflet overrides */
 .leaflet-container {
-  font-family: 'Inter', system-ui, sans-serif !important;
+  font-family: 'Open Sans', system-ui, sans-serif !important;
   border-radius: var(--radius);
 }
 
@@ -166,11 +166,29 @@
   line-height: 1.5 !important;
 }
 
+/* Crosshair cursor for picker maps */
+.leaflet-container.cursor-crosshair,
+.leaflet-container.cursor-crosshair .leaflet-grab,
+.leaflet-container.cursor-crosshair .leaflet-interactive {
+  cursor: crosshair !important;
+}
+
+/* Fix Leaflet sub-pixel tile gaps (visible white grid lines) */
+.leaflet-tile {
+  width: 256.5px !important;
+  height: 256.5px !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a {
+    cursor: pointer;
   }
 }

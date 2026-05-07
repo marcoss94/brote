@@ -47,6 +47,38 @@ export async function geocodeAddress(
   };
 }
 
+export interface SearchResult {
+  display_name: string;
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Autocomplete search — returns up to 5 Uruguay suggestions.
+ * Uses Nominatim search with same rate limit.
+ */
+export async function searchAddresses(query: string): Promise<SearchResult[]> {
+  if (!query.trim() || query.trim().length < 3) return [];
+
+  const params = new URLSearchParams({
+    q: query,
+    format: "json",
+    limit: "5",
+    countrycodes: "uy",
+    addressdetails: "1",
+  });
+
+  const response = await rateLimitedFetch(`${NOMINATIM_URL}?${params.toString()}`);
+  if (!response.ok) return [];
+
+  const results = await response.json();
+  return results.map((r: { display_name: string; lat: string; lon: string }) => ({
+    display_name: r.display_name,
+    lat: parseFloat(r.lat),
+    lng: parseFloat(r.lon),
+  }));
+}
+
 export async function geocodeAddresses(
   addresses: { address: string; city?: string }[],
   onProgress?: (completed: number, total: number, current: string) => void

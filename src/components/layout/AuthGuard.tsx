@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LeafIcon } from "@/components/icons";
+import Image from "next/image";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
@@ -108,10 +108,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       {mustChange && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
-            <div className="flex items-center gap-2 mb-1">
-              <LeafIcon className="w-5 h-5 text-forest-600" />
-              <h2 className="text-lg font-semibold text-forest-950">Bienvenido a Brote</h2>
+            <div className="flex items-center justify-center mb-3">
+              <Image src="/brote-logo.jpg" alt="Brote" width={100} height={42} className="h-8 w-auto" />
             </div>
+            <h2 className="text-lg font-semibold text-foreground text-center mb-1">Bienvenido</h2>
             <p className="text-sm text-muted-foreground mb-5">
               Es tu primer inicio de sesión. Por seguridad, elegí una contraseña nueva antes de continuar.
             </p>

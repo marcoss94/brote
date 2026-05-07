@@ -22,10 +22,11 @@ export function formatRouteMessage(
     const lines: string[] = [];
     lines.push(`\n*${stop.orden}. ${stop.cliente}*`);
     lines.push(`Dir: ${stop.direccion}`);
-    lines.push(`Hora: ${stop.franja} (llegada ~${stop.hora_estimada})`);
 
     if (stop.telefono) lines.push(`Tel: ${stop.telefono}`);
-    if (stop.notas) lines.push(`Notas: ${stop.notas}`);
+    if (stop.producto) lines.push(`Producto: ${stop.producto}`);
+    if (stop.mensaje) lines.push(`Mensaje tarjeta: ${stop.mensaje}`);
+    if (stop.obs) lines.push(`Obs: ${stop.obs}`);
 
     lines.push(`Waze: ${wazeUrl(stop.lat, stop.lng)}`);
     return lines.join("\n");

@@ -18,14 +18,14 @@ export default function ResultPreview({
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-forest-100 text-forest-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
               <polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-forest-950">
+            <p className="text-sm font-semibold text-foreground">
               Ruta optimizada
             </p>
             <p className="text-[11px] text-sage-400">
@@ -65,7 +65,7 @@ export default function ResultPreview({
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-forest-950 truncate">
+              <p className="text-sm font-medium text-foreground truncate">
                 {stop.cliente}
               </p>
               <p className="text-[11px] text-sage-400 truncate">
@@ -75,7 +75,7 @@ export default function ResultPreview({
 
             {/* Time & distance */}
             <div className="text-right flex-shrink-0">
-              <p className="text-sm font-semibold text-forest-800 tabular-nums">
+              <p className="text-sm font-semibold text-foreground tabular-nums">
                 {stop.hora_estimada}
               </p>
               <p className="text-[11px] text-sage-400 tabular-nums">
@@ -85,7 +85,7 @@ export default function ResultPreview({
 
             {/* Time window badge */}
             <div className="hidden sm:block">
-              <span className="inline-block text-[10px] font-medium bg-forest-50 text-forest-600 px-2 py-0.5 rounded-full">
+              <span className="inline-block text-[10px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                 {stop.franja}
               </span>
             </div>

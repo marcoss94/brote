@@ -37,7 +37,7 @@ export default function HistoryList({ jobs, onDownload }: HistoryListProps) {
           <div
             className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
               job.status === "completed"
-                ? "bg-forest-100 text-forest-600"
+                ? "bg-muted text-muted-foreground"
                 : job.status === "error"
                 ? "bg-terra-500/10 text-terra-500"
                 : "bg-cream-200 text-sage-400"
@@ -61,7 +61,7 @@ export default function HistoryList({ jobs, onDownload }: HistoryListProps) {
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-forest-950">
+            <p className="text-sm font-medium text-foreground">
               {job.order_count} pedidos
             </p>
             <p className="text-[11px] text-sage-400">
@@ -79,7 +79,7 @@ export default function HistoryList({ jobs, onDownload }: HistoryListProps) {
           <span
             className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
               job.status === "completed"
-                ? "bg-forest-50 text-forest-600"
+                ? "bg-muted text-muted-foreground"
                 : job.status === "error"
                 ? "bg-terra-500/10 text-terra-500"
                 : "bg-cream-200 text-sage-500"
@@ -96,7 +96,7 @@ export default function HistoryList({ jobs, onDownload }: HistoryListProps) {
           {job.status === "completed" && job.result_file_path && (
             <button
               onClick={() => onDownload(job)}
-              className="text-forest-600 hover:text-forest-800 transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
               title="Descargar resultado"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

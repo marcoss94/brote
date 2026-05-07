@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { Open_Sans } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const openSans = Open_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "Brote — Optimizador de Entregas",
@@ -17,8 +22,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={cn("h-full antialiased", inter.variable)}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+    <html lang="es" className={cn("h-full antialiased", openSans.variable)}>
+      <body className="min-h-full flex flex-col font-sans" suppressHydrationWarning>
+        {children}
+        <Toaster position="top-right" richColors />
+      </body>
     </html>
   );
 }
