@@ -144,12 +144,14 @@ export interface GeocodingProgress {
 
 export interface Profile {
   id: string;
+  email: string | null;
   full_name: string | null;
   avatar_url: string | null;
   depot_address: string | null;
   depot_lat: number | null;
   depot_lng: number | null;
   must_change_password: boolean;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }

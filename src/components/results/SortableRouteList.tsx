@@ -95,12 +95,12 @@ function SortableItem({
       ref={setNodeRef}
       style={style}
       onClick={() => onSelect?.(isSelected ? "" : stop.numero_pedido)}
-      className={`px-3 py-3 transition-colors cursor-pointer ${
+      className={`relative px-3 py-3 transition-colors cursor-pointer ${
         isDragging
           ? "bg-muted"
           : isSelected
-          ? "bg-terra-500/10 border-l-2 border-terra-500"
-          : "hover:bg-muted/40 border-l-2 border-transparent"
+          ? "bg-muted/60 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-terra-500"
+          : "hover:bg-muted/40"
       }`}
     >
       <div className="flex items-start gap-2">

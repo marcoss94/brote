@@ -97,6 +97,11 @@ export default function Header() {
               )}
             </div>
             <DropdownMenuSeparator />
+            {profile?.is_admin && (
+              <DropdownMenuItem>
+                <Link href="/admin" className="w-full">Panel de admin</Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem>
               <Link href="/cuenta" className="w-full">Mi cuenta</Link>
             </DropdownMenuItem>

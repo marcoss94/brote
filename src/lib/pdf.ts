@@ -94,11 +94,25 @@ export function generateRoutePDF({
 
   doc.setTextColor(0, 0, 0);
 
+  const textX = marginX + 14;
+  const textMaxWidth = pageWidth - textX - marginX;
+  const lineH = 4;
+
   route.forEach((stop) => {
-    const optLines =
-      Number(!!stop.telefono) + Number(!!stop.producto) +
-      Number(!!stop.mensaje) + Number(!!stop.obs);
-    const blockHeight = 16 + optLines * 5 + 6;
+    // Pre-wrap multi-line fields to compute exact height
+    doc.setFontSize(8);
+    const mensajeLines = stop.mensaje
+      ? doc.splitTextToSize(`Tarjeta: ${stop.mensaje}`, textMaxWidth)
+      : [];
+    const obsLines = stop.obs
+      ? doc.splitTextToSize(`Obs: ${stop.obs}`, textMaxWidth)
+      : [];
+
+    const singleLines =
+      Number(!!stop.telefono) + Number(!!stop.producto);
+    const totalOptLines = singleLines + mensajeLines.length + obsLines.length;
+    // 14 = top of optional block, then per-line, then gap + waze line
+    const blockHeight = 14 + totalOptLines * lineH + 6 + 4;
 
     if (cursorY + blockHeight > 280) {
       doc.addPage();
@@ -118,29 +132,28 @@ export function generateRoutePDF({
     doc.setFontSize(12);
     let clientHeader = stop.cliente;
     if (stop.fecha) clientHeader += `  ·  ${stop.fecha}`;
-    doc.text(clientHeader, marginX + 14, cursorY + 3);
+    doc.text(clientHeader, textX, cursorY + 3);
 
     // Address
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(80, 80, 80);
-    doc.text(stop.direccion, marginX + 14, cursorY + 9);
+    doc.text(stop.direccion, textX, cursorY + 9);
 
     // Optional lines
     let optY = cursorY + 14;
     doc.setFontSize(8);
     doc.setTextColor(80, 80, 80);
-    if (stop.telefono) { doc.text(`Tel: ${stop.telefono}`, marginX + 14, optY); optY += 5; }
-    if (stop.producto) { doc.text(`Producto: ${stop.producto}`, marginX + 14, optY); optY += 5; }
-    if (stop.mensaje) {
-      const mensajeShort = stop.mensaje.length > 80 ? stop.mensaje.slice(0, 80) + "…" : stop.mensaje;
-      doc.text(`Tarjeta: ${mensajeShort}`, marginX + 14, optY);
-      optY += 5;
+    if (stop.telefono) { doc.text(`Tel: ${stop.telefono}`, textX, optY); optY += lineH; }
+    if (stop.producto) { doc.text(`Producto: ${stop.producto}`, textX, optY); optY += lineH; }
+    if (mensajeLines.length) {
+      doc.text(mensajeLines, textX, optY);
+      optY += lineH * mensajeLines.length;
     }
-    if (stop.obs) {
+    if (obsLines.length) {
       doc.setTextColor(168, 90, 56);
-      doc.text(`Obs: ${stop.obs}`, marginX + 14, optY);
-      optY += 5;
+      doc.text(obsLines, textX, optY);
+      optY += lineH * obsLines.length;
     }
 
     // Waze link
@@ -148,8 +161,8 @@ export function generateRoutePDF({
     doc.setFontSize(7);
     doc.textWithLink(
       `Navegar en Waze: ${wazeUrl(stop.lat, stop.lng)}`,
-      marginX + 14,
-      optY + 2,
+      textX,
+      optY + 3,
       { url: wazeUrl(stop.lat, stop.lng) }
     );
 
