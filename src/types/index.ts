@@ -62,6 +62,7 @@ export interface PickupOrder {
   mensaje?: string;
   red_social?: string;
   obs?: string;
+  detalle_direccion?: string;
   direccion_original: string; // what the Excel said (e.g. "RETIRA PUNTA CARRETAS")
 }
 
