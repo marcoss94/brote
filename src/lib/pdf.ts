@@ -57,7 +57,7 @@ export function generateRoutePDF({
     body: route.map((s) => [
       String(s.orden),
       s.cliente,
-      s.direccion,
+      s.detalle_direccion ? `${s.direccion}\n${s.detalle_direccion}` : s.direccion,
       s.producto || "—",
       s.telefono || "—",
     ]),
@@ -101,6 +101,9 @@ export function generateRoutePDF({
   route.forEach((stop) => {
     // Pre-wrap multi-line fields to compute exact height
     doc.setFontSize(8);
+    const detalleLines = stop.detalle_direccion
+      ? doc.splitTextToSize(`Detalle: ${stop.detalle_direccion}`, textMaxWidth)
+      : [];
     const mensajeLines = stop.mensaje
       ? doc.splitTextToSize(`Tarjeta: ${stop.mensaje}`, textMaxWidth)
       : [];
@@ -110,7 +113,7 @@ export function generateRoutePDF({
 
     const singleLines =
       Number(!!stop.telefono) + Number(!!stop.producto);
-    const totalOptLines = singleLines + mensajeLines.length + obsLines.length;
+    const totalOptLines = singleLines + detalleLines.length + mensajeLines.length + obsLines.length;
     // 14 = top of optional block, then per-line, then gap + waze line
     const blockHeight = 14 + totalOptLines * lineH + 6 + 4;
 
@@ -144,6 +147,12 @@ export function generateRoutePDF({
     let optY = cursorY + 14;
     doc.setFontSize(8);
     doc.setTextColor(80, 80, 80);
+    if (detalleLines.length) {
+      doc.setTextColor(35, 35, 35);
+      doc.text(detalleLines, textX, optY);
+      optY += lineH * detalleLines.length;
+      doc.setTextColor(80, 80, 80);
+    }
     if (stop.telefono) { doc.text(`Tel: ${stop.telefono}`, textX, optY); optY += lineH; }
     if (stop.producto) { doc.text(`Producto: ${stop.producto}`, textX, optY); optY += lineH; }
     if (mensajeLines.length) {

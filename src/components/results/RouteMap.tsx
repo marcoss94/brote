@@ -128,11 +128,14 @@ export default function RouteMap({ route, depot, selectedId, onClearSelection }:
         .bindPopup(
           `<div style="font-family: 'Open Sans', sans-serif">
             <strong style="color: #232323">${stop.cliente}</strong><br/>
-            <span style="color: #666; font-size: 12px">${stop.direccion}</span><br/>
-            <div style="margin-top: 6px; display: flex; gap: 8px;">
+            <span style="color: #666; font-size: 12px">${stop.direccion}</span>
+            ${stop.detalle_direccion ? `<br/><span style="color: #232323; font-size: 12px; font-weight: 600">${stop.detalle_direccion}</span>` : ""}
+            <div style="margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap;">
               <span style="background: #e1f5e7; color: #265a33; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600">
                 #${stop.orden}
               </span>
+              ${stop.hora_estimada ? `<span style="background: #e1f5e7; color: #265a33; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600">ETA ${stop.hora_estimada}</span>` : ""}
+              ${stop.franja && stop.franja !== "—-—" ? `<span style="background: #fff; color: #c67a55; border: 1px solid #f4b193; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600">Franja ${stop.franja}</span>` : ""}
             </div>
           </div>`
         )

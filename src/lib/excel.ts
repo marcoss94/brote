@@ -18,6 +18,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   producto: ["producto", "productos", "detalle", "item"],
   mensaje: ["mensaje", "tarjeta"],
   obs: ["obs", "observaciones", "observacion", "notas"],
+  detalle_direccion: ["detalle direccion", "detalle dirección", "detalle_direccion", "apartamento", "apto", "piso", "referencia", "info", "info adicional", "complemento"],
   franja_desde: ["franja_desde", "franja desde", "horario_desde", "desde"],
   franja_hasta: ["franja_hasta", "franja hasta", "horario_hasta", "hasta"],
 };
@@ -63,6 +64,45 @@ function isPickup(direccion: string): boolean {
   return PICKUP_KEYWORDS.some((k) => d.startsWith(k) || d.includes(k));
 }
 
+/**
+ * Coerce any Excel cell value into HH:MM string.
+ * Handles: Excel time serial (0.0833 = 02:00), Date object, "02:00", "2:00", "2".
+ */
+function coerceTime(val: unknown): string {
+  if (val === null || val === undefined || val === "") return "";
+
+  // Excel serial: fraction of a day (0..1)
+  if (typeof val === "number" && val >= 0 && val < 2) {
+    const totalMin = Math.round(val * 24 * 60);
+    const h = Math.floor(totalMin / 60) % 24;
+    const m = totalMin % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+
+  // Date object (when XLSX is read with cellDates:true)
+  if (val instanceof Date) {
+    const h = val.getHours();
+    const m = val.getMinutes();
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+
+  let s = String(val).trim();
+  if (!s) return "";
+
+  // Strip seconds: "02:00:00" -> "02:00"
+  const withSec = s.match(/^(\d{1,2}):(\d{2}):\d{2}$/);
+  if (withSec) return `${withSec[1].padStart(2, "0")}:${withSec[2]}`;
+
+  // "2:00" -> "02:00"
+  const hm = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (hm) return `${hm[1].padStart(2, "0")}:${hm[2]}`;
+
+  // Pure integer "2" -> "02:00"
+  if (/^\d{1,2}$/.test(s)) return `${s.padStart(2, "0")}:00`;
+
+  return s;
+}
+
 export const EXCEL_COLUMNS: {
   key: string;
   label: string;
@@ -75,6 +115,7 @@ export const EXCEL_COLUMNS: {
   { key: "TELEFONO", label: "TELEFONO", required: false, description: "Contacto", example: "099123456" },
   { key: "RED SOCIAL", label: "RED SOCIAL", required: false, description: "Canal de origen", example: "WEB" },
   { key: "DIRECCION", label: "DIRECCION", required: true, description: 'Dirección o "RETIRA ..."', example: "Av. Brasil 2580" },
+  { key: "DETALLE DIRECCION", label: "DETALLE DIRECCION", required: false, description: "Apto, piso, referencia (NO se geocodifica)", example: "Apto 401, edificio rojo" },
   { key: "PRODUCTO", label: "PRODUCTO", required: false, description: "Producto", example: "12 rosas rojas" },
   { key: "MENSAJE", label: "MENSAJE", required: false, description: "Mensaje de tarjeta", example: "Feliz aniversario" },
   { key: "OBS", label: "OBS", required: false, description: "Observaciones", example: "Tocar timbre 2B" },
@@ -90,23 +131,12 @@ export function generateTemplateExcel(): ArrayBuffer {
       TELEFONO: "099123456",
       "RED SOCIAL": "WEB",
       DIRECCION: "Av. Brasil 2580",
+      "DETALLE DIRECCION": "Apto 401",
       PRODUCTO: "12 rosas rojas",
       MENSAJE: "Feliz aniversario",
       OBS: "Tocar timbre 2B",
       FRANJA_DESDE: "09:00",
       FRANJA_HASTA: "12:00",
-    },
-    {
-      FECHA: "14/02",
-      NOMBRE: "Juan Pérez",
-      TELEFONO: "098654321",
-      "RED SOCIAL": "Instagram",
-      DIRECCION: "RETIRA PUNTA CARRETAS",
-      PRODUCTO: "Bouquet mixto",
-      MENSAJE: "",
-      OBS: "",
-      FRANJA_DESDE: "",
-      FRANJA_HASTA: "",
     },
   ];
 
@@ -117,6 +147,7 @@ export function generateTemplateExcel(): ArrayBuffer {
     { wch: 14 },  // TELEFONO
     { wch: 12 },  // RED SOCIAL
     { wch: 32 },  // DIRECCION
+    { wch: 22 },  // DETALLE DIRECCION
     { wch: 28 },  // PRODUCTO
     { wch: 30 },  // MENSAJE
     { wch: 24 },  // OBS
@@ -207,9 +238,11 @@ export function parseExcel(buffer: ArrayBuffer): ParsedExcel {
       });
     }
 
-    // Time validation only if provided
-    const franjaDesde = get("franja_desde");
-    const franjaHasta = get("franja_hasta");
+    // Time validation only if provided — coerce Excel serial/Date/string to HH:MM
+    const desdeHeader = resolved.franja_desde;
+    const hastaHeader = resolved.franja_hasta;
+    const franjaDesde = desdeHeader ? coerceTime(row[desdeHeader]) : "";
+    const franjaHasta = hastaHeader ? coerceTime(row[hastaHeader]) : "";
 
     if (franjaDesde && !TIME_REGEX.test(franjaDesde)) {
       errors.push({
@@ -240,6 +273,7 @@ export function parseExcel(buffer: ArrayBuffer): ParsedExcel {
         mensaje: get("mensaje") || undefined,
         red_social: get("red_social") || undefined,
         obs: get("obs") || undefined,
+        detalle_direccion: get("detalle_direccion") || undefined,
         direccion_original: direccion,
       });
       continue;
@@ -259,6 +293,7 @@ export function parseExcel(buffer: ArrayBuffer): ParsedExcel {
       mensaje: get("mensaje") || undefined,
       red_social: get("red_social") || undefined,
       obs: get("obs") || undefined,
+      detalle_direccion: get("detalle_direccion") || undefined,
       pickup: false,
     };
 

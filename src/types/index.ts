@@ -20,6 +20,7 @@ export interface Order {
   mensaje?: string;
   red_social?: string;
   obs?: string;
+  detalle_direccion?: string; // apartment, floor, reference — NOT sent to geocoder
   pickup?: boolean; // true if customer picks up in store
   lat?: number;
   lng?: number;
@@ -49,6 +50,7 @@ export interface RouteStop {
   mensaje?: string;
   red_social?: string;
   obs?: string;
+  detalle_direccion?: string;
 }
 
 export interface PickupOrder {

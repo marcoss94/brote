@@ -57,6 +57,14 @@ function totalKm(route: RouteStop[] | null | undefined): number {
   return route[route.length - 1]?.distancia_acumulada_km ?? 0;
 }
 
+function localDateKey(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export default function AdminDashboard({ profiles, jobs }: Props) {
   const [userFilter, setUserFilter] = useState("");
 
@@ -106,7 +114,7 @@ export default function AdminDashboard({ profiles, jobs }: Props) {
       const d = new Date(now);
       d.setHours(0, 0, 0, 0);
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
+      const key = localDateKey(d.toISOString());
       days.push({
         date: key,
         label: `${d.getDate()}/${d.getMonth() + 1}`,
@@ -115,7 +123,7 @@ export default function AdminDashboard({ profiles, jobs }: Props) {
     }
     const idx = new Map(days.map((d, i) => [d.date, i]));
     for (const j of jobs) {
-      const k = j.created_at.slice(0, 10);
+      const k = localDateKey(j.created_at);
       const i = idx.get(k);
       if (i !== undefined) days[i].jobs++;
     }

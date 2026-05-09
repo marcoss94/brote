@@ -44,7 +44,11 @@ export class HeuristicOptimizer implements RouteOptimizer {
       if (!nn) continue;
       const optimized = this.twoOpt(nn, orders, distMatrix, config);
       if (!this.isRouteFeasible(optimized, orders, distMatrix, config)) continue;
-      const cost = this.closedTourCost(optimized, distMatrix);
+      // Cost = km + wait penalty (1h idle ≈ 3km equivalent — tunable via WAIT_KM_EQUIV)
+      const km = this.closedTourCost(optimized, distMatrix);
+      const waitMin = this.computeTotalWait(optimized, orders, distMatrix, config);
+      const WAIT_KM_EQUIV = 0.05;
+      const cost = km + waitMin * WAIT_KM_EQUIV;
       if (cost < bestCost) {
         bestCost = cost;
         bestRoute = optimized;
@@ -58,6 +62,31 @@ export class HeuristicOptimizer implements RouteOptimizer {
     }
 
     return this.buildRouteStops(bestRoute, orders, distMatrix, config);
+  }
+
+  /**
+   * Total minutes the driver waits idle for a window to open.
+   * Used to rank candidate routes — long waits = bad even if km is low.
+   */
+  private computeTotalWait(
+    route: number[],
+    orders: GeocodedOrder[],
+    distMatrix: number[][],
+    config: OptimizationConfig
+  ): number {
+    let currentTime = parseTime(config.start_time);
+    let currentPoint = 0;
+    let totalWait = 0;
+    for (const idx of route) {
+      const matrixIdx = idx + 1;
+      const travelMin = (distMatrix[currentPoint][matrixIdx] / config.average_speed_kmh) * 60;
+      const arrival = currentTime + travelMin;
+      const winStart = orders[idx].franja_desde ? parseTime(orders[idx].franja_desde) : 0;
+      totalWait += Math.max(0, winStart - arrival);
+      currentTime = Math.max(arrival, winStart) + config.service_time_minutes;
+      currentPoint = matrixIdx;
+    }
+    return totalWait;
   }
 
   /**
@@ -308,6 +337,7 @@ export class HeuristicOptimizer implements RouteOptimizer {
         mensaje: order.mensaje,
         red_social: order.red_social,
         obs: order.obs,
+        detalle_direccion: order.detalle_direccion,
       });
 
       currentTime = effectiveArrival + config.service_time_minutes;

@@ -22,6 +22,7 @@ export function formatRouteMessage(
     const lines: string[] = [];
     lines.push(`\n*${stop.orden}. ${stop.cliente}*`);
     lines.push(`Dir: ${stop.direccion}`);
+    if (stop.detalle_direccion) lines.push(`Detalle: ${stop.detalle_direccion}`);
 
     if (stop.telefono) lines.push(`Tel: ${stop.telefono}`);
     if (stop.producto) lines.push(`Producto: ${stop.producto}`);

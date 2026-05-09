@@ -129,9 +129,15 @@ function SortableItem({
           <p className="text-sm font-semibold text-foreground truncate">
             {stop.cliente}
           </p>
-          <p className="text-xs text-muted-foreground truncate mb-1">
+          <p className="text-xs text-muted-foreground truncate">
             {stop.direccion}
           </p>
+          {stop.detalle_direccion && (
+            <p className="text-[11px] text-foreground truncate mb-1">
+              {stop.detalle_direccion}
+            </p>
+          )}
+          {!stop.detalle_direccion && <div className="mb-1" />}
           {stop.producto && (
             <p className="text-[11px] text-foreground truncate mb-1.5">
               <span className="text-muted-foreground">Producto: </span>
@@ -142,6 +148,22 @@ function SortableItem({
             {stop.fecha && (
               <Badge variant="outline" className="text-[10px] h-5 px-1.5">
                 {stop.fecha}
+              </Badge>
+            )}
+            {stop.hora_estimada && (
+              <Badge
+                variant="secondary"
+                className="text-[10px] h-5 px-1.5 bg-forest-100 text-forest-800 border-forest-200"
+              >
+                ETA {stop.hora_estimada}
+              </Badge>
+            )}
+            {stop.franja && stop.franja !== "—-—" && (
+              <Badge
+                variant="outline"
+                className="text-[10px] h-5 px-1.5 border-terra-400 text-terra-600"
+              >
+                Franja {stop.franja}
               </Badge>
             )}
             <Badge

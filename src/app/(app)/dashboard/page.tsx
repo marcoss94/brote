@@ -129,14 +129,20 @@ export default function DashboardPage() {
     const days: { date: string; label: string; rutas: number }[] = [];
     const now = new Date();
 
+    const localKey = (d: Date): string => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
     for (let i = 13; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       d.setHours(0, 0, 0, 0);
 
-      const key = d.toISOString().slice(0, 10);
       days.push({
-        date: key,
+        date: localKey(d),
         label: d.toLocaleDateString("es-UY", { day: "numeric", month: "short" }),
         rutas: 0,
       });
@@ -145,7 +151,7 @@ export default function DashboardPage() {
     jobs
       .filter((j) => j.status === "completed")
       .forEach((j) => {
-        const key = new Date(j.created_at).toISOString().slice(0, 10);
+        const key = localKey(new Date(j.created_at));
         const day = days.find((d) => d.date === key);
         if (day) day.rutas++;
       });
